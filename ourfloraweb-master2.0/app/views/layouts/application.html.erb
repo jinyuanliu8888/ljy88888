@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Meta description -->
+    <meta name="description" content="Campus Flora maps the locations of more than 2000 individual plants from over 70 families on campus grounds and provides a botanical description of each plant and information on its distribution. Campus Flora not only extends the teaching of botany from the classroom into the University of Sydney campus grounds but it enables us to share our learning resources with the broader community." />
+    <!-- Customise apple "Add to home screen" styles -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <% if @species_selected && @species_selected.images.length > 0 %>
+    <meta property="og:image" content="<%= @species_selected.images.first.image.url(:original) %>">
+    <% end %>
+    <link rel="apple-touch-startup-image" href="">
+    <link rel="apple-touch-icon" href="<%= image_path 'ios_home_screen/iphone.png' %>" />
+    <link rel="apple-touch-icon" sizes="72x72" href="<%= image_path 'ios_home_screen/ipad.png' %>" />
+    <link rel="apple-touch-icon" sizes="114x114" href="<%= image_path 'ios_home_screen/iphone_retina.png' %>" />
+    <link rel="apple-touch-icon" sizes="144x144" href="<%= image_path 'ios_home_screen/ipad_retina.png' %>" />
+
+    <!-- Startup images -->
+    <!-- iOS 6 & 7 iPad (retina, portrait) -->
+    <link href="<%= image_path 'ios_home_screen/startup_1536x2008.png' %>" media="(device-width: 768px) and (device-height: 1024px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
+
+    <!-- iOS 6 & 7 iPad (retina, landscape) -->
+    <link href="<%= image_path 'ios_home_screen/startup_1496x2048.png' %>" media="(device-width: 768px) and (device-height: 1024px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
+
+    <!-- iOS 6 iPad (portrait) -->
+    <link href="<%= image_path 'ios_home_screen/startup_768x1004.png' %>" media="(device-width: 768px) and (device-height: 1024px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 1)" rel="apple-touch-startup-image">
+
+    <!-- iOS 6 iPad (landscape) -->
+    <link href="<%= image_path 'ios_home_screen/startup_748x1024.png' %>" media="(device-width: 768px) and (device-height: 1024px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 1)" rel="apple-touch-startup-image">
+
+    <!-- iOS 6 & 7 iPhone 5 -->
+    <link href="<%= image_path 'ios_home_screen/startup_640x1096.png' %>" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
+
+    <!-- iOS 6 & 7 iPhone (retina) -->
+    <link href="<%= image_path 'ios_home_screen/startup_640x920.png' %>" media="(device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
+
+    <!-- iOS 6 iPhone -->
+    <link href="<%= image_path 'ios_home_screen/startup_320x460.png' %>" media="(device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 1)" rel="apple-touch-startup-image">
+
+    <!-- Favicon -->
+    <%= favicon_link_tag 'favicon.ico' %>
+
+    <title><%= "#{@page_title || 'CampusFlora@sydney.edu.au'} - CampusFlora" %></title>
+    <link href='http://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+    <%= stylesheet_link_tag 'application', media: 'all' %>
+    <script>
+      var IMG_NOT_FOUND_SMALL = '<%= image_path 'not_found_small.png' %>'
+      var IMG_NOT_FOUND_ORIGINAL = '<%= image_path 'not_found_original.png' %>'
+      // Define the retina variable to supplant images
+      var IS_RETINA = window.devicePixelRatio > 1;
+      // Define whether the browser is mobile or not - we're showing tablets the mobile view
+      var IS_MOBILE = <%= browser.mobile? || browser.tablet? %>
+      var IS_IOS = <%= browser.mobile? && browser.safari? %>
+      var HOMESCREEN_INSTALLED = !(("standalone" in window.navigator) && !window.navigator.standalone)
+    </script>
+    <%= csrf_meta_tags %>
+
+    <!-- Google analytics tracking code -->
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-49103924-2', 'auto');
+      ga('send', 'pageview');
+    </script>
+  </head>
+  <body>
+    <%= yield %>
+
+    <!-- Google maps plugins, loaded at the end of the body to prevent blocking of site load -->
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBy6VlcDNRvb7tjqoPVpiWSMhuV6InfFFA"></script>
+    <%= javascript_include_tag 'application' %>
+    <!--script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/trunk/infobox/src/infobox.js"></script>
+    <script type="text/javascript" src="http://installscripts.io/scripts/google-maps-geolocation-marker.js"></script>
+    <script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markerclustererplus/2.1.2/src/markerclusterer_packed.js"></script-->
+    <script>
+      $(function() {
+        google.maps.event.addDomListener(window, "load", init);
+      });
+    </script>
+
+    <!-- Root element of PhotoSwipe. Must have class pswp. -->
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+        <!-- Background of PhotoSwipe.
+             It's a separate element as animating opacity is faster than rgba(). -->
+        <div class="pswp__bg"></div>
+
+        <!-- Slides wrapper with overflow:hidden. -->
+        <div class="pswp__scroll-wrap">
+
+            <!-- Container that holds slides.
+                PhotoSwipe keeps only 3 of them in the DOM to save memory.
+                Don't modify these 3 pswp__item elements, data is added later on. -->
+            <div class="pswp__container">
+                <div class="pswp__item"></div>
+                <div class="pswp__item"></div>
+                <div class="pswp__item"></div>
+            </div>
+
+            <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+            <div class="pswp__ui pswp__ui--hidden">
+
+                <div class="pswp__top-bar">
+
+                    <!--  Controls are self-explanatory. Order can be changed. -->
+
+                    <div class="pswp__counter"></div>
+
+                    <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                    <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                    <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                    <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                    <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                    <!-- element will get class pswp__preloader--active when preloader is running -->
+                    <div class="pswp__preloader">
+                        <div class="pswp__preloader__icn">
+                          <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                          </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                    <div class="pswp__share-tooltip"></div>
+                </div>
+
+                <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+                </button>
+
+                <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+                </button>
+
+                <div class="pswp__caption">
+                    <div class="pswp__caption__center"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+  </body>
+  <%= render 'templates/map' %>
+  <%= render 'templates/species' %>
+</html>

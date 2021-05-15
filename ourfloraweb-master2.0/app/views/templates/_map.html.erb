@@ -1,0 +1,105 @@
+<script type="text/template" id="species-popover-template">
+  <% unless (browser.mobile? || browser.tablet?) %><i id="overlay-close" class="icon-cancel"></i><% end %>
+  <div class="images">
+    <@ if (images.length == 0) { @>
+      <img src="<@= IMG_NOT_FOUND_ORIGINAL @>" width=250px height=400px />
+    <@ } else { @>
+      <@ for (i = 0; i < images.length; i++) { @>
+        <figure itemprop="associatedMedia" itemscope="" itemtype="http://schema.org/ImageObject">
+          <a href="<@= images[i].image_url @>" itemprop="contentUrl" data-size="<@= images[i].image_dimensions @>">
+            <img src="<% if (browser.mobile?) %><@= images[i].image_url_mobile @><% else %><@= images[i].image_url_desktop @><% end %>" itemprop="thumbnail" />
+          </a>
+        </figure>
+      <@ } @>
+    <@ } @>
+  </div>
+  <div class="content">
+    <% if (browser.mobile? || browser.tablet?) %><i id="overlay-close" class="icon-cancel mobile"></i><% end %>
+    <div class="title"><em><@= genusSpecies @></em></div>
+    <div class="authority"><@= authority @></div>
+    <div class="subtitle"><@= commonName @></div>
+    <div id="highlight-map" class="map-view"><i class="icon-location"></i>View species on map</div>
+    <% unless (browser.mobile? || browser.tablet?) %><div class="share-button"></div><% end %>
+    <div class="family"><abbr class="heading">Family name</abbr><br /><@= family.name @></div>
+    <@ if (indigenousName.length > 0) { @><div class="indigenous-name"><abbr class="heading">Indigenous Name</abbr><br /><@= indigenousName @></div><@ } @>
+    <div class="description"><abbr class="heading">Description</abbr><br /><@= markdown.toHTML(description) @></div>
+    <div class="distribution"><abbr class="heading">Distribution</abbr><br /><@= markdown.toHTML(distribution) @></div>
+    <div class="information">
+      <abbr class="heading">Information</abbr><br />
+      <@ if (family.phylogeny) { @>
+        <@= family.phylogeny @> <br />
+      <@ } @>
+      <@= markdown.toHTML(information) @>
+    </div>
+  </div>
+</script>
+
+<script type="text/template" id="species-location-popover-template">
+  <% unless (browser.mobile? || browser.tablet?) %><i id="overlay-close" class="icon-cancel"></i><% end %>
+  <div class="images">
+    <@ if (images.length == 0) { @>
+      <img src="<@= IMG_NOT_FOUND_ORIGINAL @>" width=250px height=400px />
+    <@ } else { @>
+      <@ for (i = 0; i < images.length; i++) { @>
+        <figure itemprop="associatedMedia" itemscope="" itemtype="http://schema.org/ImageObject">
+          <a href="<@= images[i].image_url @>" itemprop="contentUrl" data-size="<@= images[i].image_dimensions @>">
+            <img src="<% if (browser.mobile?) %><@= images[i].image_url_mobile @><% else %><@= images[i].image_url_desktop @><% end %>" itemprop="thumbnail" />
+          </a>
+        </figure>
+      <@ } @>
+    <@ } @>
+  </div>
+  <div class="content">
+    <% if (browser.mobile? || browser.tablet?) %><i id="overlay-close" class="icon-cancel mobile"></i><% end %>
+    <div class="title"><em><@= genusSpecies @></em></div>
+    <div class="authority"><@= authority @></div>
+    <div class="subtitle">
+      <@= commonName @>
+      <div id="highlight-map" class="map-view"><i class="icon-location"></i>View species on map</div>
+    </div>
+    <div class="species-location-meta">
+      <div class="arborplan-id">Arborplan: <@= arborplan_id @></div>
+      <div class="location">Located at (<@= lat @>, <@= lon @>)</div>
+    </div>
+    <@ if (location_information) { @>
+      <div class="species-location-info"><@= markdown.toHTML(location_information) @></div>
+    <@ } @>
+    <% unless (browser.mobile? || browser.tablet?) %><div class="share-button"></div><% end %>
+    <div class="family"><abbr class="heading">Family name</abbr><br /><@= family.name @></div>
+    <@ if (indigenousName.length > 0) { @><div class="indigenous-name"><abbr class="heading">Indigenous Name</abbr><br /><@= indigenousName @></div><@ } @>
+    <div class="description"><abbr class="heading">Description</abbr><br /><@= markdown.toHTML(description) @></div>
+    <div class="distribution"><abbr class="heading">Distribution</abbr><br /><@= markdown.toHTML(distribution) @></div>
+    <div class="information">
+      <abbr class="heading">Information</abbr><br />
+      <@ if (family.phylogeny) { @>
+        <@= family.phylogeny @> <br />
+      <@ } @>
+      <@= markdown.toHTML(species_information) @>
+    </div>
+  </div>
+</script>
+
+<script type="text/template" id="species-infobox-template">
+  <div class="species-infobox-outer">
+    <div class="species-infobox" id="infobox-<@= id @>">
+      <img class="list-image<@ print(images.length > 0 ? '' : ' no-image') @>" src="<@ print(images.length > 0 ? (IS_RETINA ? images[0].image_url_thumb_retina : images[0].image_url_thumb) : IMG_NOT_FOUND_SMALL) @>">
+      <div class="text">
+        <div class="title"><@= genusSpecies @></div>
+        <div class="subtitle"><@= commonName @></div>
+        <@ if (arborplan_id) { @><div class="arborplan-id">Arborplan: <@= arborplan_id @></div><@ } @>
+      </div>
+      <%= image_tag 'disclosure-indicator-dark.png', class: 'disclosure-indicator' %>
+    </div>
+  </div>
+</script>
+
+<script type="text/template" id="trail-popover-template">
+  <% unless (browser.mobile? || browser.tablet?) %><i id="overlay-close" class="icon-cancel"></i><% end %>
+  <div class="content">
+    <% if (browser.mobile? || browser.tablet?) %><i id="overlay-close" class="icon-cancel mobile"></i><% end %>
+    <div class="title"><em><@= name @></em></div>
+    <div id="highlight-map" class="map-view"><i class="icon-location"></i>View trail on map</div>
+    <% unless (browser.mobile? || browser.tablet?) %><div class="share-button"></div><% end %>
+    <div class="information"><abbr class="heading">Information</abbr><br /><@= markdown.toHTML(information) @></div>
+  </div>
+</script>

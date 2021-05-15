@@ -1,0 +1,35 @@
+# SQLite version 3.x
+#   gem install sqlite3
+#
+#   Ensure the SQLite 3 gem is defined in your Gemfile
+#   gem 'sqlite3'
+#
+default: &default
+  adapter: sqlite3
+  pool: 5
+  timeout: 5000
+
+development:
+  adapter: mysql2
+  encoding: utf8
+  reconnect: true
+  database: campusflora
+  pool: 5
+  username: campusflora
+  password: '@U%?38k&#~j)<0J36(4=T9(?h<u(V'
+  host: mysql
+
+# Warning: The database defined as "test" will be erased and
+# re-generated from your development database when you run "rake".
+# Do not set this db to the same as development or production.
+
+production:
+  adapter: mysql2
+  encoding: utf8
+  reconnect: false
+  database: campusflora
+  pool: 5
+  username: <%= ENV['DATABASE_USER'] %>
+  password: <%= ENV['DATABASE_PASSWORD'] %>
+  host: <%= ENV['CAMPUSFLORAWEB_MYSQL_1_PORT_3306_TCP_ADDR'] %>
+  port: <%= ENV['CAMPUSFLORAWEB_MYSQL_1_PORT_3306_TCP_PORT'] %>

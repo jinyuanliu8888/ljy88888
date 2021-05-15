@@ -1,0 +1,19 @@
+FROM ruby:2.2.0
+
+# Update package manager
+RUN apt-get update
+
+# Install imagemagick
+RUN apt-get install -y imagemagick --fix-missing
+
+# Create the directory for the codebase
+RUN mkdir -p /home/app/campusflora
+
+COPY Gemfile* /home/app/campusflora/
+WORKDIR /home/app/campusflora
+RUN bundle install
+
+# Copy across the codebase
+ADD . /home/app/campusflora
+
+CMD rm -f tmp/pids/server.pid; bin/rails server --port 3000 --binding 0.0.0.0

@@ -1,0 +1,306 @@
+<!-- Google maps plugins, loaded at the end of the body to prevent blocking of site load -->
+<%= render partial: "templates/map.html.erb" %>
+<script>
+  var IMG_NOT_FOUND_SMALL = '<%= image_path 'not_found_small.png' %>'
+  var IMG_NOT_FOUND_ORIGINAL = '<%= image_path 'not_found_original.png' %>'
+  // Define the retina variable to supplant images
+  var IS_RETINA = window.devicePixelRatio > 1;
+  var points = []
+  var speciesMarkers = []
+  var trailLine
+  var openInfoBox
+
+  _.templateSettings = {
+    evaluate:    /\<\@(.+?)\@\>/g,
+    interpolate: /\<\@=(.+?)\@\>/g,
+    escape:      /\<\@-(.+?)\@\>/g
+  }
+
+  $(function () {
+    // Initialize the google map
+    map = new google.maps.Map($('.trail-designer .map .map-inner')[0], {
+      center: {
+        lat: -33.886204,
+        lng: 151.189005
+      },
+      zoom: 19,
+      disableDefaultUI: true,
+      disableDoubleClickZoom: true,
+      mapTypeId: google.maps.MapTypeId.SATELLITE
+    })
+
+    // Re draw the line between the points on the trail
+    function drawTrailLine () {
+      if (trailLine) {
+        trailLine.setMap(null)
+        trailLine = null
+      }
+      trailLine = new google.maps.Polyline({
+        strokeColor: '#69D2E7',
+        strokeOpacity: 1.0,
+        strokeWeight: 5
+      });
+      trailLine.setMap(map);
+
+      // Push all the points into a polyline
+      for (var i = 0; i < points.length; i++) {
+        var path = trailLine.getPath();
+        path.push(points[i].marker.getPosition());
+      }
+    }
+
+    // Create a new movable "point" that has no extra information
+    function createNewMovablePoint (lat, lng) {
+      marker = new google.maps.Marker({
+        map: map,
+        draggable: true,
+        animation: google.maps.Animation.DROP,
+        position: {
+          lat: lat,
+          lng: lng
+        },
+        icon: 'http://maps.google.com/mapfiles/kml/paddle/blu-circle-lv.png'
+      });
+
+      var location = marker.getPosition();
+
+      var listItem = $('<div class="point turn"><i class="lnr lnr-menu"></i><div class="text">Turn Point</div><div class="action-buttons"><div class="button-delete">X</div></div></div>')
+      var hiddenInputLat = $('<input type="hidden" class="hidden-input-lat" name="trail[trail_points_attributes][' + points.length + '][lat]" value="' + lat + '">')
+      var hiddenInputLon = $('<input type="hidden" class="hidden-input-lon" name="trail[trail_points_attributes][' + points.length + '][lon]" value="' + lng + '">')
+      var hiddenInputOrder = $('<input type="hidden" class="hidden-input-order" name="trail[trail_points_attributes][' + points.length + '][order]" value="' + points.length + '">')
+
+      listItem.append(hiddenInputLat)
+      listItem.append(hiddenInputLon)
+      listItem.append(hiddenInputOrder)
+
+      $('.points-inner').append(listItem)
+
+      var id = (new Date()).toISOString()
+
+      google.maps.event.addListener(marker, 'dragend', function() {
+        var _listItem = listItem
+        var newLocation = marker.getPosition();
+        _listItem.find('.lat').html(newLocation.lat())
+        _listItem.find('.lng').html(newLocation.lng())
+        _listItem.find('.hidden-input-lat').val(newLocation.lat())
+        _listItem.find('.hidden-input-lng').val(newLocation.lng())
+        drawTrailLine()
+      });
+
+      listItem.on('click', '.button-delete', () => {
+        var index = _.findIndex(points, function (point) {
+          return point.id === id
+        })
+
+        if (index !== -1) {
+          points[index].marker.setMap(null)
+          points[index].listItem.off()
+          points[index].listItem.remove()
+          points.splice(index, 1)
+          for (i = 0; i < points.length; i++) {
+            points[i].listItem.find('.hidden-input-order').val(i)
+          }
+          drawTrailLine()
+        }
+      })
+
+      var newPoint = {
+        marker: marker,
+        listItem: listItem,
+        id: id,
+        type: 'turnPoint'
+      }
+
+      points.push(newPoint)
+
+      Sortable.create(document.getElementById('points-inner'), {
+        handle: ".lnr-menu",
+        dragClass: "sortable-drag",
+        animation: 150,
+        onEnd: function (evt) {
+          points.splice(evt.newIndex, 0, points.splice(evt.oldIndex, 1)[0])
+          for (i = 0; i < points.length; i++) {
+            points[i].listItem.find('.hidden-input-order').val(i)
+          }
+          drawTrailLine()
+      	},
+      });
+
+      drawTrailLine()
+    }
+
+    function addSpeciesToTrail (marker, attributes) {
+      var listItem = $('<div class="point"><i class="lnr lnr-menu"></i><div class="text">' + attributes.genusSpecies + ' ' + attributes.arborplan_id + '</div><div class="action-buttons"><div class="button-delete">X</div></div></div>')
+      var hiddenInputId = $('<input type="hidden" class="hidden-input-id" name="trail[species_location_trails_attributes][' + points.length + '][species_location_id]" value="' + attributes.id + '">')
+      var hiddenInputOrder = $('<input type="hidden" class="hidden-input-order" name="trail[species_location_trails_attributes][' + points.length + '][order]" value="' + points.length + '">')
+
+      listItem.append(hiddenInputId)
+      listItem.append(hiddenInputOrder)
+      $('.points-inner').append(listItem)
+
+      if (!marker) {
+        // Find the marker
+        var index = _.findIndex(speciesMarkers, function (speciesMarker) {
+          return speciesMarker.speciesId === attributes.id
+        })
+
+        if (index !== -1) {
+          marker = speciesMarkers[index]
+        }
+      }
+
+      marker.setIcon('http://maps.google.com/mapfiles/kml/paddle/blu-circle.png')
+
+      points.push({
+        marker: marker,
+        listItem: listItem,
+        id: attributes.id,
+        type: 'speciesLocation'
+      })
+
+      listItem.on('click', '.button-delete', function (attributes) {
+        var index = _.findIndex(points, function (point) {
+          return point.id === attributes.id
+        })
+
+        if (index !== -1) {
+          points[index].marker.setIcon(null)
+          points[index].listItem.off()
+          points[index].listItem.remove()
+          points.splice(index, 1)
+          for (i = 0; i < points.length; i++) {
+            points[i].listItem.find('.hidden-input-order').val(i)
+          }
+          drawTrailLine()
+        }
+      }.bind(null, attributes))
+
+      drawTrailLine()
+    }
+
+    $('.add-point-button').on('click', function (lat, lng) {
+      createNewMovablePoint(-33.886204, 151.189005)
+    })
+
+    // Add a listener for the click event
+    map.addListener('dblclick', function (event) {
+      createNewMovablePoint(event.latLng.lat(), event.latLng.lng())
+    });
+
+    // Manage Species being displayed on the map
+    <% @species = Species.eager_load(:family, :species_locations, :images).order('families.name') %>
+    var species = <%=raw render :template => 'species/index.json' %>
+
+    closeInfoBox = function (infoBox) {
+      if (infoBox) {
+        $('.species-infobox-outer').removeClass('visible')
+        setTimeout(function () {
+          infoBox.close()
+        }, 300)
+      }
+    }
+
+    for (var i = 0; i < species.length; i++) {
+      for (var j = 0; j < species[i].species_locations.length; j++) {
+        var marker = new google.maps.Marker({
+          map: map,
+          position: {
+            lat: parseFloat(species[i].species_locations[j].lat),
+            lng: parseFloat(species[i].species_locations[j].lon)
+          }
+        })
+        marker.speciesId = species[i].species_locations[j].id
+        speciesMarkers.push(marker)
+
+        // Create the popover info box
+        var infoTemplate = _.template($('#species-infobox-template').html())
+
+        var attributes = _.extend({}, species[i], species[i].species_locations[j])
+        attributes.species_information = species[i].information
+        attributes.location_information = species[i].species_locations[j].information
+        attributes.id = species[i].species_locations[j].id
+
+        // Initialize the little popup box when you click the marker
+        var infoBox = new InfoBox({
+          content: infoTemplate(attributes),
+          pixelOffset: new google.maps.Size(-146, -105),
+          closeBoxURL: ''
+        })
+
+        google.maps.event.addListener(infoBox, 'domready', function () {
+          $('.species-infobox-outer').addClass('visible')
+        })
+
+        // Add click event listener for the map pins
+        google.maps.event.addListener(marker, "click", function (marker, infoBox) {
+          closeInfoBox(openInfoBox)
+          infoBox.open(map, marker)
+          openInfoBox = infoBox;
+          return false
+        }.bind(null, marker, infoBox))
+
+        google.maps.event.addListener(map, 'click', function () {
+          closeInfoBox(openInfoBox)
+        })
+
+        // Add doubleclick listener for species pins to add / remove
+        google.maps.event.addListener(marker, "dblclick", function (marker, attributes) {
+          addSpeciesToTrail(marker, attributes)
+        }.bind(null, marker, attributes))
+      }
+    }
+
+    $('.show-species').on('click', function () {
+      if ($(this).hasClass('active')) {
+        $(this).removeClass('active')
+        $(this).find('.lnr-checkmark-circle').removeClass('lnr-checkmark-circle').addClass('lnr-circle-minus')
+        for (var i = 0; i < speciesMarkers.length; i++) {
+          speciesMarkers[i].setMap(null)
+        }
+        for (var i = 0; i < points.length; i++) {
+          if (points[i].type === 'speciesLocation') {
+            points[i].marker.setMap(map)
+          }
+        }
+      } else {
+        $(this).addClass('active')
+        $(this).find('.lnr-circle-minus').removeClass('lnr-circle-minus').addClass('lnr-checkmark-circle')
+        for (var i = 0; i < speciesMarkers.length; i++) {
+          speciesMarkers[i].setMap(map)
+        }
+      }
+    })
+
+    <% if combined.length > 0
+      combined.each_with_index do |t, index|
+        if t.is_a?(TrailPoint) %>
+          createNewMovablePoint(<%= t.lat %>, <%= t.lon %>)
+     <% end
+        if t.is_a?(SpeciesLocationTrail) %>
+          addSpeciesToTrail(null, _.extend({}, <%= raw t.species_location.species.attributes.to_json %>, <%= raw t.species_location.attributes.to_json %>))
+     <% end
+      end
+    end %>
+  })
+</script>
+
+<div class='trail-designer'>
+  <div class='header'>Trail Designer</div>
+  <div class='outer'>
+    <div class='points'>
+      <div class='subheader'>Double click map to add points or select species.</div>
+      <div class='body'>
+        <div id='points-inner' class='points-inner'></div>
+      </div>
+    </div>
+    <div class='map'>
+      <div class='map-buttons'>
+        <div class='show-species active'>
+          <i class='lnr lnr-checkmark-circle'></i>
+          <div class='text'>Show Species</div>
+        </div>
+      </div>
+      <div class='map-inner'></div>
+    </div>
+  </div>
+</div>

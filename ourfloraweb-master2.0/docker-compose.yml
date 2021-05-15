@@ -1,0 +1,19 @@
+rails:
+  build: .
+  dockerfile: ./docker/Dockerfile-server
+  ports:
+   - "3000:3000"
+  volumes:
+   - .:/home/app/campusflora
+  links:
+   - mysql
+  environment:
+   - RAILS_SERVE_STATIC_FILES=true
+mysql:
+  build: .
+  dockerfile: ./docker/Dockerfile-mysql
+  volumes_from:
+   - mysqldata
+mysqldata:
+  build: .
+  dockerfile: ./docker/Dockerfile-mysql-data

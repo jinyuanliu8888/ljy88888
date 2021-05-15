@@ -1,0 +1,90 @@
+<% unless browser.mobile? %>
+  <div id="overlay-dark-species" class="overlay-dark<%= @species_selected ? ' selected' : '' %>" <%= @species_selected ? 'style=display:block' : '' %>></div>
+<% end %>
+
+<% unless browser.mobile? %>
+  <div id="overlay-dark-trail" class="overlay-dark<%= @trail_selected ? ' selected' : '' %>" <%= @trail_selected ? 'style=display:block' : '' %>></div>
+<% end %>
+
+<div id="popover-outer" class="popover-outer<%= @species_selected ? ' selected' : '' %>" <%= @species_selected ? 'style=display:block' : '' %>>
+  <% if @species_selected %>
+    <%= render 'species/popover' %>
+  <% end %>
+  <div class="height-fix"></div>
+</div>
+
+<div id="popover-about-outer" class="popover-outer">
+  <div class="height-fix"></div>
+  <div id="popover-about-inner" class="popover-inner about">
+    <i id="overlay-close" class="icon-cancel"></i>
+    <div class="images">
+      <img src="<%= image_path 'about_original.png' %>" width=250px height=400px>
+    </div>
+    <div class="content">
+      <h1 class="title">About</h1>
+      <p>Representing <abbr class="highlight"><%= @families_count %></abbr> families, <abbr class="highlight"><%= @species.size %></abbr> species and <abbr class="highlight"><%= @species_location_count %></abbr> individual plants.</p>
+      <%= @markdown.render(@page_content.about_page_content).html_safe %> <br />
+      <p><a href="http://sydney.edu.au/privacy.shtml" target="_privacy">Privacy Policy</a></p>
+    </div>
+  </div>
+</div>
+
+<% unless browser.mobile? %>
+  <a href="http://sydney.edu.au">
+    <div id="usyd-logo" class="usyd-logo">
+      <%= image_tag 'usyd-logo.png' %>
+    </div>
+  </a>
+<% end %>
+
+<div id="inner-container" class="inner-container<%= browser.mobile? && browser.safari? ? ' ios' : '' %>">
+  <div id="map-canvas" class="map-canvas"></div>
+  <div id="overlay-buttons" class="overlay-buttons">
+    <% if browser.mobile? %> 
+      <%= render 'map/menu_mobile.html.erb' %>
+    <% else %>
+      <%= render 'map/menu_desktop.html.erb' %>
+    <% end %>
+  </div>
+  <div id="side-menu" class="side-menu">
+    <div id="tab-button-outer" class="tab-button-outer">
+      <div id="tab-button-species" class="tab-button selected">Species</div>
+      <div id="tab-button-families" class="tab-button">Families</div>
+      <div id="tab-button-trails" class="tab-button">Trails</div>
+    </div>
+    <div id="menu-content-container" class="menu-content-container">
+      <div id="menu-content-species" class="menu-content list">
+        <div class="search-box-outer">
+          <i class="icon-search"></i>
+          <i class="icon-cancel-circled hidden"></i>
+          <input type="text" class="search-box" placeholder="Search" autocomplete="off"></input>
+        </div>
+      </div>
+      <div id="menu-content-families" class="menu-content families">
+        <div id="family-select-all" class="selection-option">Select All</div>
+        <div id="family-unselect-all" class="selection-option">Unselect All</div>
+      </div>
+      <div id="menu-content-trails" class="menu-content trails">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function init() {
+
+    var mapManager = new MapManager(<%= @setting.lat %>,<%= @setting.lon %>);
+    // Initialize the mapManager and get the google map
+    //console.log(<%= @setting.about_page_content %>);
+    var map = mapManager.initialize();
+    var speciesManager = new SpeciesManager;
+    speciesManager.initialize(<% cache 'species_index_json', skip_digest: true do %><%= raw render(:template => 'species/index.json', :locals => { :species => @species}) %><% end %>, <%= raw @trails %>, <%= raw @families %>, map);
+  }
+
+  // Configure fastclick.js to remove mobile input delay on touch
+  if ('addEventListener' in document) {
+    document.addEventListener('DOMContentLoaded', function() {
+        FastClick.attach(document.body);
+    }, false);
+  }
+</script>

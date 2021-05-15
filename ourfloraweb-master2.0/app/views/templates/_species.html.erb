@@ -1,0 +1,26 @@
+<!-- Species list rows in right side menu -->
+<script type="text/template" id="list-row-template">
+  <img class="list-image" src="<@ print(images.length > 0 ? (IS_RETINA ? images[0].image_url_thumb_retina : images[0].image_url_thumb) : IMG_NOT_FOUND_SMALL) @>">
+  <div class="text">
+    <div class="title"><i><@= genusSpecies @></i></div>
+    <div class="subtitle"><@= commonName @></div>
+  </div>
+  <%= image_tag 'disclosure-indicator.png', class: 'disclosure-indicator' %>
+</script>
+
+<!-- Family checkbox rows in right side menu -->
+<script type="text/template" id="family-row-template">
+  <div class="checkbox family selected">
+    <i class="icon-ok"></i>
+  </div>
+  <div class='title'><@= name @></div>
+</script>
+
+<!-- Trails checkbox rows in right side menui -->
+<script type="text/template" id="trail-row-template">
+  <div class="checkbox trail">
+    <i class="icon-ok"></i>
+  </div>
+  <div class="title"><@= name @></div>
+  <div class="information trail">i</div>
+</script>
